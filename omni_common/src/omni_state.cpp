@@ -313,15 +313,23 @@ HDCallbackCode HDCALLBACK omni_state_callback(void *pUserData)
   HDErrorInfo error;
   if (HD_DEVICE_ERROR(error = hdGetError())) {
     hduPrintError(stderr, &error, "Error during main scheduler callback");
-    if (hduIsSchedulerError(&error))
+    if (hduIsSchedulerError(&error)) {
       return HD_CALLBACK_DONE;
+    }
   }
 
-  float t[7] = { 0., omni_state->joints[0], omni_state->joints[1],
-      omni_state->joints[2] - omni_state->joints[1], gimbal_angles[0],
-      gimbal_angles[1], gimbal_angles[2] };
-  for (int i = 0; i < 7; i++)
+  float t[7] = {
+    0.0f,
+    float(omni_state->joints[0]),
+    float(omni_state->joints[1]),
+    float(omni_state->joints[2] - omni_state->joints[1]),
+    float(gimbal_angles[0]),
+    float(gimbal_angles[1]),
+    float(gimbal_angles[2])
+    };
+  for (int i = 0; i < 7; i++) {
     omni_state->thetas[i] = t[i];
+  }
   return HD_CALLBACK_CONTINUE;
 }
 
