@@ -70,6 +70,10 @@ roslaunch omni_common omni_state.launch
 Data from the haptic device can be read from the following topics:
 
   /phantom/button
+
+  /phantom/button_grey
+
+  /phantom/button_white
   
   /phantom/force_feedback
   

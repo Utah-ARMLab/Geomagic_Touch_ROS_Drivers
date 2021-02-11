@@ -4,6 +4,7 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <urdf/model.h>
 #include <sensor_msgs/JointState.h>
+#include <std_msgs/Bool.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -58,6 +59,8 @@ public:
   ros::Publisher state_publisher;
   ros::Publisher pose_publisher;
   ros::Publisher button_publisher;
+  ros::Publisher grey_button_publisher;
+  ros::Publisher white_button_publisher;
   ros::Publisher joint_publisher;
   ros::Subscriber haptic_sub;
   std::string omni_name, ref_frame, units;
@@ -69,34 +72,45 @@ public:
     ros::param::param(std::string("~reference_frame"), ref_frame, std::string("/map"));
     ros::param::param(std::string("~units"), units, std::string("mm"));
 
+    std::ostringstream string_builder;
+
     //Publish button state on NAME/button
-    std::ostringstream stream1;
-    stream1 << omni_name << "/button";
-    std::string button_topic = std::string(stream1.str());
-    button_publisher = n.advertise<omni_msgs::OmniButtonEvent>(button_topic.c_str(), 100);
+    string_builder.str("");
+    string_builder << omni_name << "/button";
+    std::string button_topic = string_builder.str();
+    button_publisher = n.advertise<omni_msgs::OmniButtonEvent>(
+        button_topic.c_str(), 100);
+
+    //Publish button state on NAME/button_gray and NAME/button_white
+    std::string grey_button_topic = button_topic + "_grey";
+    std::string white_button_topic = button_topic + "_white";
+    grey_button_publisher = n.advertise<std_msgs::Bool>(
+        grey_button_topic.c_str(), 100);
+    white_button_publisher = n.advertise<std_msgs::Bool>(
+        white_button_topic.c_str(), 100);
 
     //Publish on NAME/state
-    std::ostringstream stream2;
-    stream2 << omni_name << "/state";
-    std::string state_topic_name = std::string(stream2.str());
+    string_builder.str("");
+    string_builder << omni_name << "/state";
+    std::string state_topic_name = string_builder.str();
     state_publisher = n.advertise<omni_msgs::OmniState>(state_topic_name.c_str(), 1);
 
     //Subscribe to NAME/force_feedback
-    std::ostringstream stream3;
-    stream3 << omni_name << "/force_feedback";
-    std::string force_feedback_topic = std::string(stream3.str());
+    string_builder.str("");
+    string_builder << omni_name << "/force_feedback";
+    std::string force_feedback_topic = string_builder.str();
     haptic_sub = n.subscribe(force_feedback_topic.c_str(), 1, &PhantomROS::force_callback, this);
 
     //Publish on NAME/pose
-    std::ostringstream stream4;
-    stream4 << omni_name << "/pose";
-    std::string pose_topic_name = std::string(stream4.str());
+    string_builder.str("");
+    string_builder << omni_name << "/pose";
+    std::string pose_topic_name = string_builder.str();
     pose_publisher = n.advertise<geometry_msgs::PoseStamped>(pose_topic_name.c_str(), 1);
 
     //Publish on NAME/joint_states
-    std::ostringstream stream5;
-    stream5 << omni_name << "/joint_states";
-    std::string joint_topic_name = std::string(stream5.str());
+    string_builder.str("");
+    string_builder << omni_name << "/joint_states";
+    std::string joint_topic_name = string_builder.str();
     joint_publisher = n.advertise<sensor_msgs::JointState>(joint_topic_name.c_str(), 1);
 
     state = s;
@@ -211,6 +225,16 @@ public:
       }
       if (state->buttons[1] == 1) {
         state->lock = !(state->lock);
+      }
+      if (state->buttons[0] != state->buttons_prev[0]) {
+        std_msgs::Bool is_pressed;
+        is_pressed.data = state->buttons[0] == 1;
+        grey_button_publisher.publish(is_pressed);
+      }
+      if (state->buttons[1] != state->buttons_prev[1]) {
+        std_msgs::Bool is_pressed;
+        is_pressed.data = state->buttons[1] == 1;
+        white_button_publisher.publish(is_pressed);
       }
       omni_msgs::OmniButtonEvent button_event;
       button_event.grey_button = state->buttons[0];

@@ -18,3 +18,8 @@
 *.lai
 *.la
 *.a
+
+# Editor Files
+.*.swp
+.*.swo
+*~
